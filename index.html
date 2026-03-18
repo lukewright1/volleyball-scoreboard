@@ -2454,6 +2454,130 @@ function editPresetName(key){
   input.onkeydown=function(e){if(e.key==='Enter')commit();if(e.key==='Escape'){input.value=cur;commit();}};
 }
 
+
+// ── PRE-LOADED TEAM LIBRARY ──
+var PRELOADED_TEAMS = [
+  {
+    "name": "Edison",
+    "color": "#1a6b2e",
+    "logo": "https://image.maxpreps.io/school-mascot/c/5/a/c5a36b71-74a5-431f-94a3-8337d66dfbbb.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Huntington Beach"
+  },
+  {
+    "name": "Servite",
+    "color": "#6b1a1a",
+    "logo": "https://image.maxpreps.io/school-mascot/c/0/1/c012507d-edac-46bd-93c2-7661a61b96b2.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Anaheim"
+  },
+  {
+    "name": "Mater Dei",
+    "color": "#c0392b",
+    "logo": "https://image.maxpreps.io/school-mascot/2/b/6/2b6b45d3-4465-4750-ba48-a273b674e37c.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Santa Ana"
+  },
+  {
+    "name": "Corona del Mar",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/9/6/3/9636663e-5dc6-4b22-8d24-a94689956eaa.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Newport Beach"
+  },
+  {
+    "name": "Aliso Niguel",
+    "color": "#1a4a8b",
+    "logo": "https://image.maxpreps.io/school-mascot/5/5/1/5510404b-0de4-4c90-97fc-4eea05a531b0.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Aliso Viejo"
+  },
+  {
+    "name": "Beckman",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/6/2/1/62111e2c-5727-444b-89fd-21869c390ac0.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Irvine"
+  },
+  {
+    "name": "Tesoro",
+    "color": "#8b1a1a",
+    "logo": "https://image.maxpreps.io/school-mascot/4/f/f/4ffeed80-24f6-44c0-b7db-6f597495b254.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Rancho Santa Margarita"
+  },
+  {
+    "name": "Newport Harbor",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/8/6/0/86009247-6ae1-40e1-acfa-58c200528743.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Newport Beach"
+  },
+  {
+    "name": "Marina",
+    "color": "#1a6b2e",
+    "logo": "https://image.maxpreps.io/school-mascot/9/6/f/96f0228e-b1db-4993-ad1e-5427b5592bcf.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Huntington Beach"
+  },
+  {
+    "name": "SHCP",
+    "color": "#1a6b2e",
+    "logo": "https://image.maxpreps.io/school-mascot/1/8/0/1806a4eb-3371-4e7c-a755-835229bc515e.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "San Francisco"
+  },
+  {
+    "name": "Poway",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/9/a/d/9adef103-5c38-4dc2-a6c4-b36ea4f5400c.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Poway"
+  },
+  {
+    "name": "Loyola",
+    "color": "#c0392b",
+    "logo": "https://image.maxpreps.io/school-mascot/f/2/a/f2a9167f-bc2b-4e4b-a0c1-26aaed255835.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Los Angeles"
+  },
+  {
+    "name": "Canyon Crest",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/9/1/a/91a207da-721f-4acf-a69c-cd7fa50a1f7a.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "San Diego"
+  },
+  {
+    "name": "Los Alamitos",
+    "color": "#1a6b2e",
+    "logo": "https://image.maxpreps.io/school-mascot/8/9/c/89c3c2f2-7adc-4b39-9391-7b73ec069794.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Los Alamitos"
+  },
+  {
+    "name": "Huntington Beach",
+    "color": "#e07020",
+    "logo": "https://image.maxpreps.io/school-mascot/f/6/0/f60cf593-eddc-4900-b1c9-b6362f852856.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Huntington Beach"
+  },
+  {
+    "name": "Fountain Valley",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/7/9/5/79582922-a3b0-44a5-b210-8e51f3cfb731.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Fountain Valley"
+  },
+  {
+    "name": "Redondo Union",
+    "color": "#1a3a6b",
+    "logo": "https://image.maxpreps.io/school-mascot/6/4/9/64933a7c-b8f1-4d59-96f6-c22658ba76e3.gif?width=128&height=128&auto=webp&format=pjpg",
+    "city": "Redondo Beach"
+  }
+];
+
+function seedTeamLibrary(){
+  // Only seed if library is empty
+  if(teamLibrary.length > 0) return;
+  teamLibrary = PRELOADED_TEAMS.map(function(t, i){
+    return {
+      id: 'preset_' + i,
+      name: t.name,
+      color: t.color,
+      logo: t.logo,
+      city: t.city,
+      isHome: t.name === 'Edison'
+    };
+  });
+  homeTeamId = 'preset_0'; // Edison as default home
+  saveTeamLibrary();
+}
+
 // ── TEAM LIBRARY ──
 function loadTeamLibrary(){
   try{var s=localStorage.getItem('vb_team_lib');if(s)teamLibrary=JSON.parse(s);}catch(e){}
@@ -3023,6 +3147,7 @@ function checkUrlParams(){
 loadSavedState();
 loadHistory();
 loadPresetNames();
+seedTeamLibrary();
 checkUrlParams();
 loadTeamLibrary();
 // Apply home team as team 1 default if set
