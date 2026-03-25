@@ -399,29 +399,17 @@ function fetchScore(){
 
 function init(){
   var p = getParams();
-  liveCode = p.code||p.bin;
-  var codeEl = document.getElementById('code-val');
-  if(codeEl) codeEl.textContent = liveCode||'----';
-
+  // ?bin=BINID is the permanent overlay URL — never changes
   if(p.bin){
-    // Direct bin ID provided
     binId = p.bin;
+    var codeEl = document.getElementById('code-val');
+    if(codeEl) codeEl.style.display = 'none'; // hide code for permanent link
     fetchScore();
     setInterval(fetchScore, refreshInterval);
-  } else if(p.code){
-    // Search by code name
-    fetch(JSONBIN_BASE+'/b/search?q=vb-live-'+p.code, {
-      headers:{ 'X-Master-Key': JSONBIN_KEY }
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if(d.result && d.result.length>0){
-        binId = d.result[0].id;
-        fetchScore();
-        setInterval(fetchScore, refreshInterval);
-      }
-    })
-    .catch(function(){});
+  } else {
+    // No bin ID — show waiting state
+    var codeEl = document.getElementById('code-val');
+    if(codeEl) codeEl.textContent = 'WAITING';
   }
 }
 
