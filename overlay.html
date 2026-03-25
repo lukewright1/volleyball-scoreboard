@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VB Scoreboard Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  /* Transparent background — Streamlabs sees through this */
+  body {
+    background: transparent;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.4; }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity:0; }
+    to   { transform: translateY(0);   opacity:1; }
+  }
+
+  #scorebar {
+    width: 100%;
+    height: 90px;
+    display: flex;
+    align-items: stretch;
+    animation: slideUp 0.6s ease;
+    font-family: 'Oswald', sans-serif;
+    /* Subtle frosted dark bar */
+    background: linear-gradient(180deg, rgba(8,8,20,0.92) 0%, rgba(4,4,12,0.97) 100%);
+    border-top: 2px solid rgba(255,255,255,0.08);
+  }
+
+  /* LIVE badge left */
+  #live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    background: rgba(255,255,255,0.04);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .live-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #22dd66;
+    animation: pulse 1.4s infinite;
+    flex-shrink: 0;
+  }
+  #live-label {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: #22dd66;
+    font-weight: 600;
+  }
+
+  /* Team panel */
+  .team-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .team-panel::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: inherit;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .team-panel.left { flex-direction: row; }
+  .team-panel.right { flex-direction: row-reverse; }
+
+  .team-logo {
+    width: 54px; height: 54px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.9);
+    padding: 3px;
+    flex-shrink: 0;
+  }
+  .team-initial {
+    width: 54px; height: 54px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .team-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .team-panel.right .team-info { align-items: flex-end; }
+  .team-name {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+  }
+  .team-sets {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 2px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+  }
+
+  /* Score divider center */
+  #score-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+  .score-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 100%;
+    font-size: 54px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.5);
+    letter-spacing: -1px;
+    font-family: 'Oswald', sans-serif;
+    transition: all 0.3s;
+  }
+  .score-divider {
+    font-size: 32px;
+    color: rgba(255,255,255,0.2);
+    font-weight: 400;
+    padding: 0 4px;
+    align-self: center;
+  }
+
+  /* SET tracker */
+  #set-tracker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 16px;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .set-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 58px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 10px;
+    letter-spacing: 1px;
+    font-family: 'Roboto', sans-serif;
+    color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.04);
+    gap: 1px;
+  }
+  .set-pill.active {
+    background: #1a4a8b;
+    border-color: #4a8adb;
+    color: #fff;
+  }
+  .set-pill .pill-score {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+  }
+  .set-pill .pill-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  /* Code display right */
+  #code-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border-left: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+    gap: 2px;
+  }
+  #code-display .code-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.25);
+    font-family: 'Roboto', sans-serif;
+  }
+  #code-display .code-val {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Roboto Mono', monospace;
+  }
+
+  /* Score flash animation on update */
+  @keyframes scoreFlash {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.15); color: #ffee44; }
+    100% { transform: scale(1); }
+  }
+  .score-flash { animation: scoreFlash 0.4s ease; }
+
+  /* Game over state */
+  body.game-over #scorebar {
+    background: linear-gradient(180deg, rgba(20,10,0,0.95) 0%, rgba(10,5,0,0.98) 100%);
+  }
+  body.game-over .live-dot { background: #ffaa00; }
+  body.game-over #live-label { color: #ffaa00; content: 'FINAL'; }
+</style>
+</head>
+<body>
+
+<div id="scorebar">
+
+  <!-- LIVE badge -->
+  <div id="live-badge">
+    <div class="live-dot"></div>
+    <div id="live-label">LIVE</div>
+  </div>
+
+  <!-- Team 0 (left) -->
+  <div class="team-panel left" id="panel-0">
+    <div id="logo-0" class="team-initial" style="background:#1a6b2e;">E</div>
+    <div class="team-info">
+      <div class="team-name" id="name-0">EDISON</div>
+      <div class="team-sets" id="sets-0">SETS: 0</div>
+    </div>
+  </div>
+
+  <!-- Score center -->
+  <div id="score-center">
+    <div class="score-box" id="score-0">00</div>
+    <div class="score-divider">—</div>
+    <div class="score-box" id="score-1">00</div>
+  </div>
+
+  <!-- Team 1 (right) -->
+  <div class="team-panel right" id="panel-1">
+    <div id="logo-1" class="team-initial" style="background:#1a3a6b;">G</div>
+    <div class="team-info">
+      <div class="team-name" id="name-1">GUEST</div>
+      <div class="team-sets" id="sets-1">SETS: 0</div>
+    </div>
+  </div>
+
+  <!-- Set tracker -->
+  <div id="set-tracker"></div>
+
+  <!-- Code -->
+  <div id="code-display">
+    <div class="code-label">CODE</div>
+    <div class="code-val" id="code-val">----</div>
+  </div>
+
+</div>
+
+<script>
+var JSONBIN_KEY = '$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
+var JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+var binId = null;
+var liveCode = null;
+var prevScores = [0,0];
+var refreshInterval = 5000; // 5 seconds for stream overlay
+
+function getParams(){
+  var p = new URLSearchParams(window.location.search);
+  return { code: p.get('code'), bin: p.get('bin') };
+}
+
+function pad(n){ return n<10?'0'+n:''+n; }
+
+function flashScore(idx){
+  var el = document.getElementById('score-'+idx);
+  if(!el) return;
+  el.classList.remove('score-flash');
+  void el.offsetWidth;
+  el.classList.add('score-flash');
+  setTimeout(function(){ el.classList.remove('score-flash'); }, 400);
+}
+
+function updateOverlay(data){
+  if(!data || !data.teams) return;
+  var t = data.teams;
+
+  for(var i=0;i<2;i++){
+    var name = (t[i]&&t[i].name||'Team '+(i+1)).toUpperCase();
+    var color = (t[i]&&t[i].color)||'#1a3a6b';
+    var logo = t[i]&&t[i].logo;
+    var score = data.scores&&data.scores[i]||0;
+    var sets = data.sets&&data.sets[i]||0;
+
+    // Name
+    var nameEl = document.getElementById('name-'+i);
+    if(nameEl) nameEl.textContent = name;
+
+    // Sets
+    var setsEl = document.getElementById('sets-'+i);
+    if(setsEl) setsEl.textContent = 'SETS: '+sets;
+
+    // Score — flash if changed
+    var scoreEl = document.getElementById('score-'+i);
+    if(scoreEl){
+      if(score !== prevScores[i]) flashScore(i);
+      scoreEl.textContent = pad(score);
+    }
+
+    // Panel color tint
+    var panel = document.getElementById('panel-'+i);
+    if(panel) panel.style.background = color+'22';
+
+    // Logo
+    var logoEl = document.getElementById('logo-'+i);
+    if(logoEl){
+      if(logo){
+        logoEl.innerHTML = '<img src="'+logo+'" style="width:54px;height:54px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.9);padding:3px;" onerror="this.parentNode.innerHTML=\'<span style=font-size:26px;font-weight:700;color:#fff;>'+name.charAt(0)+'</span>\'"/>';
+        logoEl.style.background = 'transparent';
+      } else {
+        logoEl.style.background = color;
+        logoEl.innerHTML = '<span style="font-size:26px;font-weight:700;color:#fff;">'+name.charAt(0)+'</span>';
+      }
+    }
+  }
+
+  prevScores = [data.scores&&data.scores[0]||0, data.scores&&data.scores[1]||0];
+
+  // Set tracker
+  var tracker = document.getElementById('set-tracker');
+  if(tracker && data.setHistory !== undefined){
+    var total = (data.setsToWin||2)*2-1;
+    var html = '';
+    for(var s=0;s<total;s++){
+      var h = data.setHistory&&data.setHistory[s];
+      var isCur = s===((data.setHistory&&data.setHistory.length)||0) && !data.gameOver;
+      if(isCur){
+        html += '<div class="set-pill active"><span class="pill-label">SET</span><span class="pill-score">'+(s+1)+'</span></div>';
+      } else if(h){
+        var wc = h.scores[0]>h.scores[1]?((data.teams[0]&&data.teams[0].color)||'#1a6b2e'):((data.teams[1]&&data.teams[1].color)||'#8b1a1a');
+        html += '<div class="set-pill" style="background:'+wc+'44;border-color:'+wc+'66;"><span class="pill-label">SET '+(s+1)+'</span><span class="pill-score">'+h.scores[0]+'-'+h.scores[1]+'</span></div>';
+      } else {
+        html += '<div class="set-pill"><span class="pill-label">SET</span><span class="pill-score" style="opacity:0.2;">'+(s+1)+'</span></div>';
+      }
+    }
+    tracker.innerHTML = html;
+  }
+
+  // Game over
+  if(data.gameOver){
+    document.body.classList.add('game-over');
+    var liveLabel = document.getElementById('live-label');
+    if(liveLabel) liveLabel.textContent = 'FINAL';
+  } else {
+    document.body.classList.remove('game-over');
+    var liveLabel2 = document.getElementById('live-label');
+    if(liveLabel2) liveLabel2.textContent = 'LIVE';
+  }
+}
+
+function fetchScore(){
+  if(!binId) return;
+  fetch(JSONBIN_BASE+'/b/'+binId+'/latest', {
+    headers:{ 'X-Master-Key': JSONBIN_KEY }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ updateOverlay(d.record); })
+  .catch(function(){});
+}
+
+function init(){
+  var p = getParams();
+  liveCode = p.code||p.bin;
+  var codeEl = document.getElementById('code-val');
+  if(codeEl) codeEl.textContent = liveCode||'----';
+
+  if(p.bin){
+    // Direct bin ID provided
+    binId = p.bin;
+    fetchScore();
+    setInterval(fetchScore, refreshInterval);
+  } else if(p.code){
+    // Search by code name
+    fetch(JSONBIN_BASE+'/b/search?q=vb-live-'+p.code, {
+      headers:{ 'X-Master-Key': JSONBIN_KEY }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.result && d.result.length>0){
+        binId = d.result[0].id;
+        fetchScore();
+        setInterval(fetchScore, refreshInterval);
+      }
+    })
+    .catch(function(){});
+  }
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
