@@ -153,10 +153,11 @@
   }
 
   .team-sets {
-    font-family: 'Roboto', sans-serif;
-    font-size: 11px;
-    letter-spacing: 1.8px;
-    color: var(--muted);
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.85);
   }
 
   #score-center {
@@ -164,10 +165,11 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 10px 12px;
+    padding: 10px 12px 18px;
     border-left: 1px solid rgba(255,255,255,0.08);
     border-right: 1px solid rgba(255,255,255,0.08);
     background: rgba(255,255,255,0.03);
+    position: relative;
   }
 
   .score-box {
@@ -184,6 +186,39 @@
     font-size: 24px;
     color: rgba(255,255,255,0.22);
     padding: 0 2px;
+  }
+
+
+  /* Leading indicator */
+  .team-panel.is-leading {
+    background: rgba(255,255,255,0.06) !important;
+  }
+  .team-panel.is-leading .team-name {
+    color: #ffee44;
+  }
+  .leading-arrow {
+    font-size: 14px;
+    color: #ffee44;
+    display: none;
+    animation: pulse 1.2s infinite;
+  }
+  .team-panel.is-leading .leading-arrow {
+    display: inline;
+  }
+  /* Set score in center */
+  #set-score {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+  #set-score.has-sets {
+    color: #ffee44;
+    font-size: 12px;
   }
 
   /* Portrait / phone */
@@ -220,8 +255,8 @@
     }
 
     .team-sets {
-      font-size: 10px;
-      letter-spacing: 1.2px;
+      font-size: 13px;
+      letter-spacing: 1.5px;
     }
 
     #live-badge {
@@ -280,7 +315,7 @@
     }
 
     .team-sets {
-      font-size: 10px;
+      font-size: 12px;
     }
 
     .score-box {
@@ -300,8 +335,9 @@
   <div class="team-panel left" id="panel-0">
     <div class="team-logo-wrap" id="logo-0" style="background:#1a6b2e;">E</div>
     <div class="team-info">
-      <div class="team-name" id="name-0">EDISON</div>
+      <div class="team-name" id="name-0">EDISON <span class="leading-arrow" id="arrow-0">▲</span></div>
       <div class="team-sets" id="sets-0">SETS: 0</div>
+
     </div>
   </div>
 
@@ -309,12 +345,14 @@
     <div class="score-box" id="score-0">00</div>
     <div class="score-sep">—</div>
     <div class="score-box" id="score-1">00</div>
+    <div id="set-score" style="display:none;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);">SETS 0–0</div>
   </div>
 
   <div class="team-panel right" id="panel-1">
     <div class="team-info">
-      <div class="team-name" id="name-1">GUEST</div>
+      <div class="team-name" id="name-1">GUEST <span class="leading-arrow" id="arrow-1">▲</span></div>
       <div class="team-sets" id="sets-1">SETS: 0</div>
+
     </div>
     <div class="team-logo-wrap" id="logo-1" style="background:#1a3a6b;">G</div>
   </div>
@@ -377,6 +415,42 @@ function update(data){
   ];
   var ll=document.getElementById('live-label');
   if(ll) ll.textContent = data.gameOver ? 'FINAL' : 'LIVE';
+
+  // Leading indicator
+  var s0=(data.scores&&data.scores[0])||0;
+  var s1=(data.scores&&data.scores[1])||0;
+  var p0=document.getElementById('panel-0');
+  var p1=document.getElementById('panel-1');
+  var col0=(data.teams&&data.teams[0]&&data.teams[0].color)||'#1a6b2e';
+  var col1=(data.teams&&data.teams[1]&&data.teams[1].color)||'#1a3a6b';
+  if(p0&&p1){
+    p0.classList.toggle('is-leading', s0>s1);
+    p1.classList.toggle('is-leading', s1>s0);
+    p0.style.background = s0>s1 ? col0+'35' : col0+'20';
+    p1.style.background = s1>s0 ? col1+'35' : col1+'20';
+  }
+
+  // Set score display
+  var ss0=(data.sets&&data.sets[0])||0;
+  var ss1=(data.sets&&data.sets[1])||0;
+  var setEl=document.getElementById('set-score');
+  if(setEl){
+    var hasSets = ss0>0||ss1>0;
+    if(hasSets){
+      var n0=(data.teams&&data.teams[0]&&data.teams[0].name)||'T1';
+      var n1=(data.teams&&data.teams[1]&&data.teams[1].name)||'T2';
+      var leader = ss0>ss1?n0:ss1>ss0?n1:null;
+      if(leader){
+        setEl.textContent = leader.toUpperCase()+' LEADS SETS '+ss0+'–'+ss1;
+      } else {
+        setEl.textContent = 'SETS '+ss0+'–'+ss1;
+      }
+      setEl.className = 'has-sets';
+      setEl.style.display = 'block';
+    } else {
+      setEl.style.display = 'none';
+    }
+  }
 }
 
 function fetch_score(){
