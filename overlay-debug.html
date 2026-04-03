@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>VB Overlay Debug</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#111; color:#fff; font-family:monospace; padding:20px; }
+.status { font-size:14px; margin:8px 0; padding:8px; border-radius:6px; }
+.ok { background:#0a3a0a; color:#22dd66; }
+.err { background:#3a0a0a; color:#ff6666; }
+.info { background:#0a1a3a; color:#4a8adb; }
+#scorebar { margin-top:20px; background:#1e1e2e; padding:16px; border-radius:10px; font-size:18px; }
+</style>
+</head>
+<body>
+<div id="log"></div>
+<div id="scorebar">Score will appear here...</div>
+<script>
+var KEY = '$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
+var BASE = 'https://api.jsonbin.io/v3';
+
+function log(msg, type){
+  var d = document.createElement('div');
+  d.className = 'status ' + (type||'info');
+  d.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  document.getElementById('log').appendChild(d);
+}
+
+function init(){
+  var p = new URLSearchParams(window.location.search);
+  var binId = p.get('bin');
+  log('Bin ID: ' + (binId||'MISSING — add ?bin=YOURBINID to URL'), binId?'ok':'err');
+  
+  if(!binId){ log('No bin ID found in URL!', 'err'); return; }
+  
+  log('Fetching from JSONBin...', 'info');
+  fetch(BASE+'/b/'+binId+'/latest', {
+    headers: { 'X-Master-Key': KEY }
+  })
+  .then(function(r){
+    log('HTTP Status: ' + r.status, r.ok?'ok':'err');
+    return r.json();
+  })
+  .then(function(d){
+    if(d.record){
+      log('✅ Got data! Teams: ' + (d.record.teams&&d.record.teams[0]&&d.record.teams[0].name), 'ok');
+      log('Score: ' + (d.record.scores&&d.record.scores.join(' - ')), 'ok');
+      document.getElementById('scorebar').textContent = 
+        (d.record.teams&&d.record.teams[0]&&d.record.teams[0].name||'T1') + ' ' +
+        (d.record.scores&&d.record.scores[0]||0) + ' — ' +
+        (d.record.scores&&d.record.scores[1]||0) + ' ' +
+        (d.record.teams&&d.record.teams[1]&&d.record.teams[1].name||'T2');
+    } else {
+      log('No record in response: ' + JSON.stringify(d).substring(0,100), 'err');
+    }
+  })
+  .catch(function(e){
+    log('❌ Fetch failed: ' + e.message, 'err');
+    log('This usually means CORS is blocking the request in Streamlabs', 'err');
+  });
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
