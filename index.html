@@ -1008,15 +1008,15 @@ body.light .hdr-title{color:#444;}
   <div id="switch-warn"></div>
   <div id="timeout-bar">
     <div class="to-section" id="to-sec-0">
-      <span id="to-name-0-txt" style="color:inherit;">TEAM1</span>
-      <div class="to-dots" id="to-dots-0"></div>
+      <span id="to-name-0-txt" onclick="openSettingsToTeam(0)" style="cursor:pointer;display:flex;align-items:center;gap:3px;"><span style="font-size:8px;opacity:0.4;">✏️</span></span>
+      <div class="to-dots" id="to-dots-0" onclick="undoTimeout(0)" title="Tap to remove a timeout" style="cursor:pointer;"></div>
       <button class="to-btn" onclick="useTimeout(0)">T/O</button>
     </div>
     <div style="font-size:10px;color:#333;letter-spacing:2px;align-self:center;">TIME OUTS</div>
     <div class="to-section" id="to-sec-1">
       <button class="to-btn" onclick="useTimeout(1)">T/O</button>
-      <div class="to-dots" id="to-dots-1"></div>
-      <span id="to-name-1-txt" style="color:inherit;">TEAM2</span>
+      <div class="to-dots" id="to-dots-1" onclick="undoTimeout(1)" title="Tap to remove a timeout" style="cursor:pointer;"></div>
+      <span id="to-name-1-txt" onclick="openSettingsToTeam(1)" style="cursor:pointer;display:flex;align-items:center;gap:3px;"><span style="font-size:8px;opacity:0.4;">✏️</span></span>
     </div>
   </div>
   <div id="rotation-bar">
@@ -1426,7 +1426,7 @@ body.light .hdr-title{color:#444;}
       <!-- Overlay URL for Streamlabs -->
       <div style="background:#0a0a1e;border:1px solid #2a2a4e;border-radius:10px;padding:10px 12px;">
         <div style="font-size:10px;letter-spacing:2px;color:#22dd66;margin-bottom:6px;">📺 STREAMLABS OVERLAY URL</div>
-        <div id="overlay-url-display" style="font-size:10px;color:#4a8adb;word-break:break-all;font-family:'Roboto Mono',monospace;line-height:1.6;margin-bottom:8px;min-height:32px;">Starting...</div>
+        <div id="overlay-url-display" style="font-size:10px;color:#4a8adb;word-break:break-all;font-family:'Roboto Mono',monospace;line-height:1.6;margin-bottom:8px;min-height:32px;" data-url="https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357">https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357</div>
         <button onclick="copyOverlayUrl()" style="width:100%;background:#1a4a8b;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:10px;">📋 Copy Overlay URL for Streamlabs</button>
       </div>
     </div>
@@ -1737,6 +1737,9 @@ function reopenGame(){
   openEdit();
 }
 function resetGame(){
+  if(!gameOver&&(scores[0]>0||scores[1]>0||sets[0]>0||sets[1]>0)){
+    if(!confirm('Reset game? This will clear the current score.'))return;
+  }
   clearGameState();scores=[0,0];sets=[0,0];setHistory=[];gameOver=false;winner=null;timeouts=[0,0];servingTeam=0;scoreHistory=[];rotations=[0,0];hs4ManSwitchDone=false;render();var ew=document.getElementById('switch-warn');if(ew)ew.style.display='none';}
 
 function triggerSwitch(old,ns,ended){
@@ -2288,6 +2291,13 @@ function generateRecap(){
   });
   if(!gameOver)lines.push('Current set: '+scores[0]+' – '+scores[1]);
   return lines.join('\n');
+}
+
+function undoTimeout(i){
+  if(timeouts[i]<=0)return;
+  timeouts[i]--;
+  render();
+  showToast('Timeout removed for '+teams[i].name);
 }
 function useTimeout(i){
   if(gameOver)return;
@@ -4000,37 +4010,34 @@ function handleLiveBtn(){
     goLive();
   }
 }
+// Permanent bin ID — hardcoded, never changes
+var PERMANENT_BIN_ID = '69cfdf33856a682189f81357';
+
 function goLive(){
   if(liveBinId){
     showLiveModal();
     return;
   }
-  // Try to reuse the fixed permanent bin first
-  try{
-    var fb=localStorage.getItem('vb_fixed_bin');
-    if(fb){
-      var fbd=JSON.parse(fb);
-      if(fbd.binId){
-        liveBinId=fbd.binId;
-        liveCode=fbd.code||'LIVE';
-        startLivePush();
-        updateLiveBar();
-        // Force overlay URL update after short delay
-        setTimeout(function(){
-          var overlayEl=document.getElementById('overlay-url-display');
-          if(overlayEl&&liveBinId){
-            var overlayUrl='https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin='+liveBinId;
-            overlayEl.textContent=overlayUrl;
-            overlayEl.dataset.url=overlayUrl;
-          }
-        },300);
-        showLiveModal();
-        showToast('📡 Live! Same link as last time.');
-        return;
-      }
+  // Always use the hardcoded permanent bin — no more new bins
+  liveBinId = PERMANENT_BIN_ID;
+  liveCode = 'LIVE';
+  // Save to localStorage too for recovery
+  try{localStorage.setItem('vb_fixed_bin',JSON.stringify({binId:liveBinId,code:'LIVE'}));}catch(e){}
+  try{localStorage.setItem('vb_live_bin',JSON.stringify({binId:liveBinId,code:'LIVE',ts:Date.now()}));}catch(e){}
+  startLivePush();
+  updateLiveBar();
+  // Show overlay URL
+  setTimeout(function(){
+    var overlayEl=document.getElementById('overlay-url-display');
+    if(overlayEl){
+      overlayEl.textContent='https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357';
+      overlayEl.dataset.url='https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357';
     }
-  }catch(e){}
-  // First time — create a permanent bin
+  },200);
+  showLiveModal();
+  showToast('📡 Live! Overlay link is permanent.');
+  return;
+  // Dead code below kept for reference only
   liveCode='LIVE';
   var payload=getLivePayload();
   fetch(JSONBIN_BASE+'/b',{
