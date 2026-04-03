@@ -4,416 +4,392 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>VB Scoreboard Overlay</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Roboto:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg-1: rgba(6, 6, 18, 0.88);
+    --bg-2: rgba(3, 3, 10, 0.94);
+    --border: rgba(255, 255, 255, 0.12);
+    --muted: rgba(255, 255, 255, 0.58);
+    --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    --safe-top: max(12px, env(safe-area-inset-top));
+    --safe-left: max(12px, env(safe-area-inset-left));
+    --safe-right: max(12px, env(safe-area-inset-right));
+  }
 
-  /* Transparent background — Streamlabs sees through this */
-  body {
-    background: transparent;
-    width: 1920px;
-    height: 1080px;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 0;
+    background: transparent;
+    font-family: 'Oswald', sans-serif;
+  }
+
+  body {
+    position: relative;
   }
 
   @keyframes pulse {
-    0%,100% { opacity:1; }
-    50% { opacity:0.4; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
   }
-  @keyframes slideUp {
-    from { transform: translateY(100%); opacity:0; }
-    to   { transform: translateY(0);   opacity:1; }
+
+  @keyframes flash {
+    0% { transform: scale(1); color: #fff; }
+    40% { transform: scale(1.12); color: #ffee44; }
+    100% { transform: scale(1); color: #fff; }
   }
+
+  .score-flash { animation: flash 0.35s ease; }
 
   #scorebar {
-    width: 100%;
-    height: 90px;
-    display: flex;
+    position: absolute;
+    top: calc(var(--safe-top) + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(94vw, 1100px);
+    min-height: 88px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: stretch;
-    animation: slideUp 0.6s ease;
-    font-family: 'Oswald', sans-serif;
-    /* Subtle frosted dark bar */
-    background: linear-gradient(180deg, rgba(8,8,20,0.92) 0%, rgba(4,4,12,0.97) 100%);
-    border-top: 2px solid rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
   }
 
-  /* LIVE badge left */
   #live-badge {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 0 20px;
-    background: rgba(255,255,255,0.04);
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 10px;
+    min-width: 62px;
     border-right: 1px solid rgba(255,255,255,0.08);
-    flex-shrink: 0;
+    background: rgba(255,255,255,0.02);
   }
+
   .live-dot {
-    width: 10px; height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #22dd66;
     animation: pulse 1.4s infinite;
-    flex-shrink: 0;
   }
+
   #live-label {
-    font-size: 13px;
-    letter-spacing: 3px;
+    font-size: 10px;
+    letter-spacing: 1.8px;
     color: #22dd66;
-    font-weight: 600;
-  }
-
-  /* Team panel */
-  .team-panel {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 0 20px;
-    position: relative;
-    overflow: hidden;
-  }
-  .team-panel::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: inherit;
-    opacity: 0.18;
-    pointer-events: none;
-  }
-  .team-panel.left { flex-direction: row; }
-  .team-panel.right { flex-direction: row-reverse; }
-
-  .team-logo {
-    width: 54px; height: 54px;
-    border-radius: 8px;
-    object-fit: contain;
-    background: rgba(255,255,255,0.9);
-    padding: 3px;
-    flex-shrink: 0;
-  }
-  .team-initial {
-    width: 54px; height: 54px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
-  }
-  .team-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .team-panel.right .team-info { align-items: flex-end; }
-  .team-name {
-    font-size: 26px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 320px;
-  }
-  .team-sets {
-    font-size: 13px;
-    color: rgba(255,255,255,0.55);
-    letter-spacing: 2px;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
   }
 
-  /* Score divider center */
+  .team-panel {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .team-panel.right {
+    grid-template-columns: minmax(0, 1fr) 58px;
+  }
+
+  .team-logo-wrap {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+  }
+
+  .team-logo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: rgba(255,255,255,0.92);
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .team-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .team-panel.right .team-info {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .team-name {
+    font-size: clamp(18px, 2vw, 26px);
+    line-height: 1;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+
+  .team-sets {
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    color: var(--muted);
+  }
+
   #score-center {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0;
-    flex-shrink: 0;
-    padding: 0 4px;
+    gap: 4px;
+    padding: 10px 12px;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
   }
+
   .score-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 100%;
-    font-size: 54px;
-    font-weight: 700;
+    min-width: 62px;
+    text-align: center;
+    font-size: clamp(42px, 3.5vw, 60px);
+    line-height: 1;
+    letter-spacing: -2px;
     color: #fff;
     text-shadow: 0 3px 12px rgba(0,0,0,0.5);
-    letter-spacing: -1px;
-    font-family: 'Oswald', sans-serif;
-    transition: all 0.3s;
-  }
-  .score-divider {
-    font-size: 32px;
-    color: rgba(255,255,255,0.2);
-    font-weight: 400;
-    padding: 0 4px;
-    align-self: center;
   }
 
-  /* SET tracker */
-  #set-tracker {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 16px;
-    border-left: 1px solid rgba(255,255,255,0.08);
-    flex-shrink: 0;
-  }
-  .set-pill {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 58px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    font-size: 10px;
-    letter-spacing: 1px;
-    font-family: 'Roboto', sans-serif;
-    color: rgba(255,255,255,0.4);
-    background: rgba(255,255,255,0.04);
-    gap: 1px;
-  }
-  .set-pill.active {
-    background: #1a4a8b;
-    border-color: #4a8adb;
-    color: #fff;
-  }
-  .set-pill .pill-score {
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'Oswald', sans-serif;
-  }
-  .set-pill .pill-label {
-    font-size: 9px;
-    letter-spacing: 1px;
+  .score-sep {
+    font-size: 24px;
+    color: rgba(255,255,255,0.22);
+    padding: 0 2px;
   }
 
-  /* Code display right */
-  #code-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0 18px;
-    border-left: 1px solid rgba(255,255,255,0.06);
-    flex-shrink: 0;
-    gap: 2px;
-  }
-  #code-display .code-label {
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: rgba(255,255,255,0.25);
-    font-family: 'Roboto', sans-serif;
-  }
-  #code-display .code-val {
-    font-size: 14px;
-    letter-spacing: 3px;
-    color: rgba(255,255,255,0.4);
-    font-family: 'Roboto Mono', monospace;
+  /* Portrait / phone */
+  @media (orientation: portrait) {
+    #scorebar {
+      width: calc(100vw - var(--safe-left) - var(--safe-right));
+      max-width: 700px;
+      grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+      min-height: 82px;
+      border-radius: 18px;
+    }
+
+    .team-panel,
+    .team-panel.right {
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 8px;
+      padding: 8px 10px;
+    }
+
+    .team-panel.right {
+      grid-template-columns: minmax(0, 1fr) 46px;
+    }
+
+    .team-logo-wrap {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      font-size: 20px;
+    }
+
+    .team-name {
+      font-size: clamp(13px, 3.1vw, 20px);
+      letter-spacing: 0.5px;
+    }
+
+    .team-sets {
+      font-size: 10px;
+      letter-spacing: 1.2px;
+    }
+
+    #live-badge {
+      min-width: 48px;
+      padding: 8px 6px;
+    }
+
+    #live-label {
+      font-size: 9px;
+      letter-spacing: 1.4px;
+    }
+
+    #score-center {
+      padding: 8px 8px;
+    }
+
+    .score-box {
+      min-width: 40px;
+      font-size: clamp(30px, 8vw, 44px);
+      letter-spacing: -1px;
+    }
+
+    .score-sep {
+      font-size: 18px;
+    }
   }
 
-  /* Score flash animation on update */
-  @keyframes scoreFlash {
-    0%   { transform: scale(1); }
-    30%  { transform: scale(1.15); color: #ffee44; }
-    100% { transform: scale(1); }
-  }
-  .score-flash { animation: scoreFlash 0.4s ease; }
+  /* Short landscape screens, including iPhone in landscape */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #scorebar {
+      top: 10px;
+      width: min(92vw, 980px);
+      min-height: 74px;
+      border-radius: 16px;
+    }
 
-  /* Game over state */
-  body.game-over #scorebar {
-    background: linear-gradient(180deg, rgba(20,10,0,0.95) 0%, rgba(10,5,0,0.98) 100%);
+    #live-badge {
+      min-width: 50px;
+      padding: 8px 6px;
+    }
+
+    .team-panel,
+    .team-panel.right {
+      padding: 8px 10px;
+      gap: 8px;
+    }
+
+    .team-logo-wrap {
+      width: 42px;
+      height: 42px;
+      font-size: 18px;
+    }
+
+    .team-name {
+      font-size: clamp(14px, 1.7vw, 18px);
+    }
+
+    .team-sets {
+      font-size: 10px;
+    }
+
+    .score-box {
+      min-width: 46px;
+      font-size: clamp(28px, 4vw, 42px);
+    }
   }
-  body.game-over .live-dot { background: #ffaa00; }
-  body.game-over #live-label { color: #ffaa00; content: 'FINAL'; }
 </style>
 </head>
 <body>
-
 <div id="scorebar">
-
-  <!-- LIVE badge -->
   <div id="live-badge">
     <div class="live-dot"></div>
     <div id="live-label">LIVE</div>
   </div>
 
-  <!-- Team 0 (left) -->
   <div class="team-panel left" id="panel-0">
-    <div id="logo-0" class="team-initial" style="background:#1a6b2e;">E</div>
+    <div class="team-logo-wrap" id="logo-0" style="background:#1a6b2e;">E</div>
     <div class="team-info">
       <div class="team-name" id="name-0">EDISON</div>
       <div class="team-sets" id="sets-0">SETS: 0</div>
     </div>
   </div>
 
-  <!-- Score center -->
   <div id="score-center">
     <div class="score-box" id="score-0">00</div>
-    <div class="score-divider">—</div>
+    <div class="score-sep">—</div>
     <div class="score-box" id="score-1">00</div>
   </div>
 
-  <!-- Team 1 (right) -->
   <div class="team-panel right" id="panel-1">
-    <div id="logo-1" class="team-initial" style="background:#1a3a6b;">G</div>
     <div class="team-info">
       <div class="team-name" id="name-1">GUEST</div>
       <div class="team-sets" id="sets-1">SETS: 0</div>
     </div>
+    <div class="team-logo-wrap" id="logo-1" style="background:#1a3a6b;">G</div>
   </div>
-
-  <!-- Set tracker -->
-  <div id="set-tracker"></div>
-
-  <!-- Code -->
-  <div id="code-display">
-    <div class="code-label">CODE</div>
-    <div class="code-val" id="code-val">----</div>
-  </div>
-
 </div>
 
 <script>
-var JSONBIN_KEY = '$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
-var JSONBIN_BASE = 'https://api.jsonbin.io/v3';
-var binId = null;
-var liveCode = null;
-var prevScores = [0,0];
-var refreshInterval = 5000; // 5 seconds for stream overlay
+var KEY='$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
+var BASE='https://api.jsonbin.io/v3';
+var PERMANENT_BIN='69cfdf33856a682189f81357';
+var prevScores=[-1,-1];
 
-function getParams(){
-  var p = new URLSearchParams(window.location.search);
-  return { code: p.get('code'), bin: p.get('bin') };
-}
+function pad(n){return n<10?'0'+n:''+n;}
 
-function pad(n){ return n<10?'0'+n:''+n; }
-
-function flashScore(idx){
-  var el = document.getElementById('score-'+idx);
-  if(!el) return;
+function flash(i){
+  var el=document.getElementById('score-'+i);
+  if(!el)return;
   el.classList.remove('score-flash');
   void el.offsetWidth;
   el.classList.add('score-flash');
-  setTimeout(function(){ el.classList.remove('score-flash'); }, 400);
+  setTimeout(function(){el.classList.remove('score-flash');},400);
 }
 
-function updateOverlay(data){
-  if(!data || !data.teams) return;
-  var t = data.teams;
-
+function update(data){
+  if(!data||!data.teams)return;
   for(var i=0;i<2;i++){
-    var name = (t[i]&&t[i].name||'Team '+(i+1)).toUpperCase();
-    var color = (t[i]&&t[i].color)||'#1a3a6b';
-    var logo = t[i]&&t[i].logo;
-    var score = data.scores&&data.scores[i]||0;
-    var sets = data.sets&&data.sets[i]||0;
+    var team=(data.teams[i]||{});
+    var name=(team.name||('Team '+(i+1))).toUpperCase();
+    var color=team.color||'#1a3a6b';
+    var logo=team.logo;
+    var score=(data.scores&&typeof data.scores[i] !== 'undefined') ? data.scores[i] : 0;
+    var sets=(data.sets&&typeof data.sets[i] !== 'undefined') ? data.sets[i] : 0;
 
-    // Name
-    var nameEl = document.getElementById('name-'+i);
-    if(nameEl) nameEl.textContent = name;
+    var nameEl=document.getElementById('name-'+i);
+    var setsEl=document.getElementById('sets-'+i);
+    var scoreEl=document.getElementById('score-'+i);
+    var logoEl=document.getElementById('logo-'+i);
+    var panel=document.getElementById('panel-'+i);
 
-    // Sets
-    var setsEl = document.getElementById('sets-'+i);
-    if(setsEl) setsEl.textContent = 'SETS: '+sets;
-
-    // Score — flash if changed
-    var scoreEl = document.getElementById('score-'+i);
+    if(nameEl) nameEl.textContent=name;
+    if(setsEl) setsEl.textContent='SETS: '+sets;
     if(scoreEl){
-      if(score !== prevScores[i]) flashScore(i);
-      scoreEl.textContent = pad(score);
+      if(score!==prevScores[i] && prevScores[i] !== -1) flash(i);
+      scoreEl.textContent=pad(score);
     }
-
-    // Panel color tint
-    var panel = document.getElementById('panel-'+i);
-    if(panel) panel.style.background = color+'22';
-
-    // Logo
-    var logoEl = document.getElementById('logo-'+i);
+    if(panel) panel.style.background=color+'20';
     if(logoEl){
       if(logo){
-        logoEl.innerHTML = '<img src="'+logo+'" style="width:54px;height:54px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.9);padding:3px;" onerror="this.parentNode.innerHTML=\'<span style=font-size:26px;font-weight:700;color:#fff;>'+name.charAt(0)+'</span>\'"/>';
-        logoEl.style.background = 'transparent';
+        logoEl.innerHTML='<img src="'+logo+'" alt="'+name+' logo"/>';
+        logoEl.style.background='transparent';
       } else {
-        logoEl.style.background = color;
-        logoEl.innerHTML = '<span style="font-size:26px;font-weight:700;color:#fff;">'+name.charAt(0)+'</span>';
+        logoEl.innerHTML='';
+        logoEl.style.background=color;
+        logoEl.textContent=name.charAt(0);
       }
     }
   }
-
-  prevScores = [data.scores&&data.scores[0]||0, data.scores&&data.scores[1]||0];
-
-  // Set tracker
-  var tracker = document.getElementById('set-tracker');
-  if(tracker && data.setHistory !== undefined){
-    var total = (data.setsToWin||2)*2-1;
-    var html = '';
-    for(var s=0;s<total;s++){
-      var h = data.setHistory&&data.setHistory[s];
-      var isCur = s===((data.setHistory&&data.setHistory.length)||0) && !data.gameOver;
-      if(isCur){
-        html += '<div class="set-pill active"><span class="pill-label">SET</span><span class="pill-score">'+(s+1)+'</span></div>';
-      } else if(h){
-        var wc = h.scores[0]>h.scores[1]?((data.teams[0]&&data.teams[0].color)||'#1a6b2e'):((data.teams[1]&&data.teams[1].color)||'#8b1a1a');
-        html += '<div class="set-pill" style="background:'+wc+'44;border-color:'+wc+'66;"><span class="pill-label">SET '+(s+1)+'</span><span class="pill-score">'+h.scores[0]+'-'+h.scores[1]+'</span></div>';
-      } else {
-        html += '<div class="set-pill"><span class="pill-label">SET</span><span class="pill-score" style="opacity:0.2;">'+(s+1)+'</span></div>';
-      }
-    }
-    tracker.innerHTML = html;
-  }
-
-  // Game over
-  if(data.gameOver){
-    document.body.classList.add('game-over');
-    var liveLabel = document.getElementById('live-label');
-    if(liveLabel) liveLabel.textContent = 'FINAL';
-  } else {
-    document.body.classList.remove('game-over');
-    var liveLabel2 = document.getElementById('live-label');
-    if(liveLabel2) liveLabel2.textContent = 'LIVE';
-  }
+  prevScores=[
+    (data.scores&&typeof data.scores[0] !== 'undefined') ? data.scores[0] : 0,
+    (data.scores&&typeof data.scores[1] !== 'undefined') ? data.scores[1] : 0
+  ];
+  var ll=document.getElementById('live-label');
+  if(ll) ll.textContent = data.gameOver ? 'FINAL' : 'LIVE';
 }
 
-function fetchScore(){
-  if(!binId) return;
-  fetch(JSONBIN_BASE+'/b/'+binId+'/latest', {
-    headers:{ 'X-Master-Key': JSONBIN_KEY }
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){ updateOverlay(d.record); })
-  .catch(function(){});
+function fetch_score(){
+  var p=new URLSearchParams(window.location.search);
+  var bin=p.get('bin')||PERMANENT_BIN;
+  fetch(BASE+'/b/'+bin+'/latest',{headers:{'X-Master-Key':KEY}})
+    .then(function(r){return r.json();})
+    .then(function(d){update(d.record);})
+    .catch(function(){});
 }
 
-function init(){
-  var p = getParams();
-  // ?bin=BINID is the permanent overlay URL — never changes
-  if(p.bin){
-    binId = p.bin;
-    var codeEl = document.getElementById('code-val');
-    if(codeEl) codeEl.style.display = 'none'; // hide code for permanent link
-    fetchScore();
-    setInterval(fetchScore, refreshInterval);
-  } else {
-    // No bin ID — show waiting state
-    var codeEl = document.getElementById('code-val');
-    if(codeEl) codeEl.textContent = 'WAITING';
-  }
-}
-
-window.onload = init;
+fetch_score();
+setInterval(fetch_score,5000);
 </script>
 </body>
 </html>
