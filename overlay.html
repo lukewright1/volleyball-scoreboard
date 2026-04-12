@@ -221,6 +221,27 @@
     font-size: 12px;
   }
 
+
+  /* Timeout active banner */
+  #timeout-banner {
+    display: none;
+    position: absolute;
+    bottom: -42px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(230,160,0,0.95);
+    color: #000;
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 6px 20px;
+    border-radius: 0 0 12px 12px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  #timeout-banner.show { display: block; }
+
   /* Portrait / phone */
   @media (orientation: portrait) {
     #scorebar {
@@ -356,6 +377,7 @@
     </div>
     <div class="team-logo-wrap" id="logo-1" style="background:#1a3a6b;">G</div>
   </div>
+  <div id="timeout-banner">⏱ TIME OUT</div>
 </div>
 
 <script>
@@ -415,6 +437,19 @@ function update(data){
   ];
   var ll=document.getElementById('live-label');
   if(ll) ll.textContent = data.gameOver ? 'FINAL' : 'LIVE';
+
+  // Timeout banner
+  var tob=document.getElementById('timeout-banner');
+  if(tob){
+    if(data.inTimeout && data.timeoutTeam>=0 && data.teams && data.teams[data.timeoutTeam]){
+      var toName=data.teams[data.timeoutTeam].name.toUpperCase();
+      var toSecs=data.timeoutRemaining>0?' · '+data.timeoutRemaining+'s':'';
+      tob.textContent='⏱ TIME OUT — '+toName+toSecs;
+      tob.classList.add('show');
+    } else {
+      tob.classList.remove('show');
+    }
+  }
 
   // Leading indicator
   var s0=(data.scores&&data.scores[0])||0;

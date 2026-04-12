@@ -1451,7 +1451,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.4.2 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.5.0 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -1613,7 +1613,7 @@ var scores=[0,0],sets=[0,0],setHistory=[],gameOver=false,winner=null;
 var timeouts=[0,0],maxTimeouts=2,servingTeam=0;
 var scoreHistory=[];
 var timeoutDuration=60; // seconds, adjustable
-var toTimer=null,toRemaining=0;
+var toTimer=null,toRemaining=0,currentToTeam=-1;
 var lightMode=false;
 var rotations=[0,0]; // current rotation index per team (0-5)
 var showRotation=false;
@@ -2311,6 +2311,7 @@ function useTimeout(i){
   }
 }
 function startTimeoutTimer(teamIdx){
+  currentToTeam=teamIdx;
   if(toTimer)clearInterval(toTimer);
   toRemaining=timeoutDuration;
   var el=document.getElementById('to-countdown');
@@ -2332,6 +2333,7 @@ function startTimeoutTimer(teamIdx){
   },1000);
 }
 function stopTimeout(){
+  currentToTeam=-1;
   if(toTimer){clearInterval(toTimer);toTimer=null;}
   document.getElementById('to-countdown').classList.remove('show');
   haptic('heavy');
@@ -3999,6 +4001,9 @@ function getLivePayload(){
     serve: servingTeam,
     timeouts: timeouts,
     maxTimeouts: maxTimeouts,
+    inTimeout: toTimer!==null,
+    timeoutTeam: toTimer!==null?currentToTeam:-1,
+    timeoutRemaining: toRemaining,
     teams: teams.map(function(t){return{name:t.name,color:t.color,logo:t.logo};}),
   };
 }
@@ -4278,6 +4283,23 @@ function renderViewerScore(data){
       if(ini){ini.style.display='flex';ini.style.background='rgba(255,255,255,0.18)';}
     }
   }
+  // Timeout active banner on viewer
+  var toBanner=document.getElementById('viewer-timeout-banner');
+  if(!toBanner){
+    toBanner=document.createElement('div');
+    toBanner.id='viewer-timeout-banner';
+    toBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(230,160,0,0.95);color:#000;text-align:center;font-family:Oswald,sans-serif;font-size:clamp(18px,4vw,28px);font-weight:700;letter-spacing:3px;padding:clamp(10px,2vh,18px);display:none;';
+    document.body.appendChild(toBanner);
+  }
+  if(data.inTimeout && data.timeoutTeam>=0 && data.teams && data.teams[data.timeoutTeam]){
+    var toTeamName=data.teams[data.timeoutTeam].name.toUpperCase();
+    var toSecs=data.timeoutRemaining>0?' · '+data.timeoutRemaining+'s':'';
+    toBanner.textContent='⏱ TIME OUT — '+toTeamName+toSecs;
+    toBanner.style.display='block';
+  } else {
+    toBanner.style.display='none';
+  }
+
   // Timeouts on viewer
   if(data.timeouts && data.maxTimeouts){
     for(var vi=0;vi<2;vi++){
