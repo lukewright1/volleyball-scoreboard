@@ -133,7 +133,8 @@ body.light .hdr-title{color:#444;}
 .rot-team{display:flex;gap:4px;align-items:center;}
 .rot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
 .rot-cell{width:clamp(16px,3.5vw,22px);height:clamp(16px,3.5vw,22px);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:clamp(7px,1.5vw,9px);font-weight:700;background:#1e1e2e;color:#555;border:1px solid #2a2a3e;}
-.rot-cell.server{background:#1a4a8b;color:#fff;border-color:#4a8adb;}
+.rot-cell.server{background:#1a4a8b;color:#fff;border-color:#4a8adb;box-shadow:0 0 0 1px #4a8adb;}
+.rot-net{grid-column:1/-1;height:9px;margin-bottom:2px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;letter-spacing:2px;color:#ddd;background:repeating-linear-gradient(90deg,#777 0 1px,#2a2a3e 1px 4px);border-top:2px solid #ddd;}
 .rot-name{font-size:9px;color:#555;letter-spacing:1px;writing-mode:vertical-lr;text-orientation:mixed;}
 
 /* ── TEAM LIBRARY ── */
@@ -1041,7 +1042,7 @@ body.light .hdr-title{color:#444;}
     </div>
   </div>
   <div id="rotation-bar">
-    <div class="rot-label">SERVE ROTATION</div>
+    <div class="rot-label">SERVE ROTATION · SERVER = BOTTOM-RIGHT</div>
     <div class="rot-positions">
       <div class="rot-team"><div class="rot-name" id="rot-name-0"></div><div class="rot-grid" id="rot-grid-0"></div></div>
       <div class="rot-team"><div class="rot-grid" id="rot-grid-1"></div><div class="rot-name" id="rot-name-1"></div></div>
@@ -1471,8 +1472,20 @@ body.light .hdr-title{color:#444;}
     <button onclick="applySettingsOnly()" style="flex:2;background:#1a4a8b;border-radius:10px;color:#fff;font-size:14px;font-weight:700;letter-spacing:1px;padding:15px;border:none;">✓ Apply — Keep Game</button>
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
+  <div id="cloud-card" style="background:#0a0a1e;border:1px solid #2a2a4e;border-radius:10px;padding:10px 12px;margin-top:14px;">
+    <div style="font-size:10px;letter-spacing:2px;color:#4a8adb;margin-bottom:6px;">☁️ CLOUD BACKUP</div>
+    <div id="cloud-status" style="font-size:12px;color:#aaa;margin-bottom:6px;">Checking…</div>
+    <div style="font-size:10px;color:#666;margin-bottom:2px;">SYNC CODE (write this down — it unlocks your backup)</div>
+    <div id="cloud-code" style="font-size:15px;color:#fff;letter-spacing:2px;font-family:'Roboto Mono',monospace;margin-bottom:8px;">----</div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="cloudBackupNow()" style="flex:1;background:#1a4a8b;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:9px 4px;">⬆ Back up now</button>
+      <button onclick="cloudRestoreNow()" style="flex:1;background:#1e1e2e;border:1px solid #2a2a3e;border-radius:8px;color:#ccc;font-size:12px;font-weight:700;padding:9px 4px;">⬇ Restore</button>
+      <button onclick="cloudChangeCode()" style="flex:1;background:#1e1e2e;border:1px solid #2a2a3e;border-radius:8px;color:#ccc;font-size:12px;font-weight:700;padding:9px 4px;">🔑 Code</button>
+    </div>
+    <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">Backs up teams, favorites, logos, rules, defaults and match history automatically. Use the same code on another phone/iPad to share them.</div>
+  </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.4 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.6 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -2650,18 +2663,27 @@ function renderRotation(){
     grid.innerHTML='';
     // Front row positions (indices 3,4,5 in rotation array), then back row (0,1,2)
     var rot=rotations[t];
-    var order=[3,4,5,0,1,2]; // front-left, front-mid, front-right, back-left, back-mid, back-right
+    // Court as seen from behind the team's own baseline, NET at the top:
+    //   front row (next to net): 4  3  2
+    //   back row:                5  6  1  <- position 1 (back-right) is the server
+    // slot index: 0=back-right(server) 1=back-mid 2=back-left 3=front-left 4=front-mid 5=front-right
+    var order=[3,4,5,2,1,0];       // slots, drawn left-to-right, front row then back row
+    var stdPos=[1,6,5,4,3,2];      // starting position number of the player who began in each slot
+    var net=document.createElement('div');
+    net.className='rot-net';net.textContent='NET';
+    grid.appendChild(net);
     for(var p=0;p<6;p++){
-      var pos=(order[p]-rot+6)%6; // actual player number at this position
+      var slot=order[p];
+      var player=(slot-rot+6)%6;   // which player (by starting slot) is standing in this slot now
       var cell=document.createElement('div');
-      cell.className='rot-cell'+(pos===0?' server':'');
-      cell.textContent=(pos+1);
+      cell.className='rot-cell'+(slot===0?' server':'');
+      cell.textContent=stdPos[player];
       grid.appendChild(cell);
     }
     // Add rotate button below
     var btn=document.createElement('button');
     btn.textContent='↻';
-    btn.style.cssText='background:#1a4a8b;border:none;border-radius:4px;color:#fff;font-size:10px;padding:2px 6px;cursor:pointer;margin-top:2px;width:100%;font-family:Oswald,sans-serif;';
+    btn.style.cssText='background:#1a4a8b;border:none;border-radius:4px;color:#fff;font-size:10px;padding:2px 6px;cursor:pointer;margin-top:2px;width:100%;grid-column:1/-1;font-family:Oswald,sans-serif;';
     btn.onclick=(function(ti){return function(){rotateTeam(ti);};})(t);
     grid.appendChild(btn);
   }
@@ -4785,6 +4807,7 @@ function toggleAutoSwitch(){
 
 
 function testAndFixLogos(){
+  if(!navigator.onLine) return; // offline (e.g. gym with no signal) looks like 'broken logo' — never erase logos then
   teamLibrary.forEach(function(t){
     if(t.logo && t.logo.startsWith('http')){
       var img=new Image();
@@ -4816,6 +4839,125 @@ function searchTeamLogo(formType){
   window.open('https://www.google.com/search?tbm=isch&q='+query,'_blank');
 }
 
+// ── CLOUD BACKUP (Firebase) ──
+// Everything the user saves (teams, favorites, logos, rules, defaults, history, theme) is mirrored to Firebase
+// under /vb/backup_<syncCode>. Game state, live-session ids and the GitHub token are NEVER uploaded.
+var CLOUD_KEY_RE=/^(vb_team_lib|vb_home_team|vb_config|vb_teams|vb_custom_presets|vb_preset_names|vb_history|vb_theme|vb_default_.+)$/;
+var _lsSet=Storage.prototype.setItem, _lsRemove=Storage.prototype.removeItem;
+var cloudReady=false, cloudTimer=null, cloudBusy=false;
+function cloudCode(){
+  var c=null;try{c=localStorage.getItem('vb_sync_code');}catch(e){}
+  if(!c){
+    var ch='abcdefghjkmnpqrstuvwxyz23456789';c='';
+    for(var i=0;i<10;i++)c+=ch[Math.floor(Math.random()*ch.length)];
+    try{_lsSet.call(localStorage,'vb_sync_code',c);}catch(e){}
+  }
+  return c;
+}
+function cloudUrl(){return FB_DB+'/vb/backup_'+cloudCode()+'.json';}
+function cloudStatus(msg,color){
+  var el=document.getElementById('cloud-status');if(el){el.textContent=msg;el.style.color=color||'#aaa';}
+  var cd=document.getElementById('cloud-code');if(cd)cd.textContent=cloudCode();
+}
+function cloudGather(){
+  var d={};
+  try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(CLOUD_KEY_RE.test(k))d[k]=localStorage.getItem(k);}}catch(e){}
+  return d;
+}
+function cloudMarkDirty(){
+  // A device that has never synced (no vb_cloud_ts) only holds defaults, so it must not count as "has unsynced edits"
+  var synced=false;try{synced=!!localStorage.getItem('vb_cloud_ts');}catch(e){}
+  if(cloudReady||synced){try{_lsSet.call(localStorage,'vb_cloud_dirty','1');}catch(e){}}
+  if(!cloudReady)return;
+  if(cloudTimer)clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(cloudPush,3000);
+}
+Storage.prototype.setItem=function(k){
+  _lsSet.apply(this,arguments);
+  if(this===window.localStorage&&CLOUD_KEY_RE.test(k))cloudMarkDirty();
+};
+Storage.prototype.removeItem=function(k){
+  _lsRemove.apply(this,arguments);
+  if(this===window.localStorage&&CLOUD_KEY_RE.test(k))cloudMarkDirty();
+};
+function cloudPush(keepalive){
+  if(!cloudReady||cloudBusy)return Promise.resolve();
+  var payload=JSON.stringify(cloudGather()),h=0;
+  for(var i=0;i<payload.length;i++){h=((h<<5)-h+payload.charCodeAt(i))|0;}
+  h=String(h)+':'+payload.length;
+  var lastH=null;try{lastH=localStorage.getItem('vb_cloud_hash');}catch(e){}
+  if(h===lastH){ // nothing actually changed since the last upload
+    try{_lsRemove.call(localStorage,'vb_cloud_dirty');}catch(e){}
+    cloudStatus('✓ In sync with cloud','#22dd66');
+    return Promise.resolve();
+  }
+  cloudBusy=true;
+  var ts=Date.now();
+  return fetch(cloudUrl(),{method:'PUT',headers:{'Content-Type':'application/json'},
+    body:'{"_ts":'+ts+',"data":'+payload+'}'})
+  .then(function(r){
+    cloudBusy=false;
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    try{_lsSet.call(localStorage,'vb_cloud_ts',String(ts));_lsSet.call(localStorage,'vb_cloud_hash',h);_lsRemove.call(localStorage,'vb_cloud_dirty');}catch(e){}
+    cloudStatus('✓ Backed up '+new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),'#22dd66');
+  }).catch(function(e){
+    cloudBusy=false;
+    cloudStatus('⚠ Backup failed ('+e.message+') — will retry','#e6a000');
+    setTimeout(function(){if(localStorage.getItem('vb_cloud_dirty'))cloudPush();},30000);
+  });
+}
+function cloudApply(cloud){
+  var data=cloud.data||{};
+  for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(CLOUD_KEY_RE.test(k)&&!(k in data))_lsRemove.call(localStorage,k);}
+  Object.keys(data).forEach(function(k){if(CLOUD_KEY_RE.test(k))_lsSet.call(localStorage,k,data[k]);});
+  try{_lsSet.call(localStorage,'vb_cloud_ts',String(cloud._ts||Date.now()));_lsRemove.call(localStorage,'vb_cloud_dirty');_lsRemove.call(localStorage,'vb_cloud_hash');}catch(e){}
+}
+function cloudPull(){
+  cloudStatus('Checking cloud…');
+  return fetch(cloudUrl()).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(cloud){
+    var localTs=0,dirty=false;
+    try{localTs=parseInt(localStorage.getItem('vb_cloud_ts'))||0;dirty=!!localStorage.getItem('vb_cloud_dirty');}catch(e){}
+    if(cloud&&cloud._ts&&cloud._ts>localTs&&!dirty){
+      cloudApply(cloud);
+      cloudStatus('✓ Restored from cloud — reloading…','#22dd66');
+      setTimeout(function(){location.reload();},400);
+      return;
+    }
+    cloudReady=true;
+    if(!cloud||dirty||localTs>(cloud._ts||0)){cloudMarkDirty();}
+    else cloudStatus('✓ In sync with cloud','#22dd66');
+  }).catch(function(e){
+    cloudStatus('⚠ Cloud unreachable ('+e.message+') — retrying','#e6a000');
+    setTimeout(cloudPull,30000);
+  });
+}
+function cloudBackupNow(){
+  if(!cloudReady){showToast('Still connecting to cloud…');return;}
+  cloudBusy=false;cloudPush().then(function(){showToast('Backed up ☁️');});
+}
+function cloudRestoreNow(){
+  if(!confirm('Replace the teams, favorites and settings on this device with the cloud backup?'))return;
+  cloudStatus('Restoring…');
+  fetch(cloudUrl()).then(function(r){return r.json();}).then(function(cloud){
+    if(!cloud||!cloud.data){showToast('No backup found for this code');cloudStatus('No backup found for this code','#e6a000');return;}
+    cloudApply(cloud);location.reload();
+  }).catch(function(e){showToast('Restore failed: '+e.message);});
+}
+function cloudChangeCode(){
+  var c=prompt('Enter your sync code (letters/numbers, 6+ characters). Using the same code on another device shares teams, favorites and settings.',cloudCode());
+  if(c===null)return;
+  c=c.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  if(c.length<6){showToast('Code must be at least 6 characters');return;}
+  try{_lsSet.call(localStorage,'vb_sync_code',c);_lsRemove.call(localStorage,'vb_cloud_ts');_lsRemove.call(localStorage,'vb_cloud_dirty');}catch(e){}
+  location.reload();
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'&&cloudReady&&localStorage.getItem('vb_cloud_dirty')){if(cloudTimer)clearTimeout(cloudTimer);cloudPush();}
+});
+
 loadSavedState();
 // Always force auto switch and showSW OFF on startup unless beach mode
 // (User must explicitly turn on per game)
@@ -4834,9 +4976,10 @@ loadHistory();
 setTimeout(testAndFixLogos, 2000);
 loadPresetNames();
 loadCustomPresets();
+loadTeamLibrary();
 seedTeamLibrary();
 checkUrlParams();
-loadTeamLibrary();
+setTimeout(cloudPull,800);
 // Apply home team as team 1 default if set
 try{
   // Always apply home team as Team 1 if set
