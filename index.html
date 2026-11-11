@@ -134,6 +134,7 @@ body.light .hdr-title{color:#444;}
 .rot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
 .rot-cell{width:clamp(16px,3.5vw,22px);height:clamp(16px,3.5vw,22px);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:clamp(7px,1.5vw,9px);font-weight:700;background:#1e1e2e;color:#555;border:1px solid #2a2a3e;}
 .rot-cell.server{background:#1a4a8b;color:#fff;border-color:#4a8adb;box-shadow:0 0 0 1px #4a8adb;}
+.rot-cell.p1{border-color:#e6a000;box-shadow:inset 0 0 0 1px #e6a000;}
 .rot-net{grid-column:1/-1;height:9px;margin-bottom:2px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;letter-spacing:2px;color:#ddd;background:repeating-linear-gradient(90deg,#777 0 1px,#2a2a3e 1px 4px);border-top:2px solid #ddd;}
 .rot-name{font-size:9px;color:#555;letter-spacing:1px;writing-mode:vertical-lr;text-orientation:mixed;}
 
@@ -359,6 +360,12 @@ body.light .hdr-title{color:#444;}
 .viewer-to-dot{width:7px;height:7px;border-radius:50%;}
 .viewer-to-dot.used{background:rgba(255,255,255,0.8);}
 .viewer-to-dot.unused{background:rgba(255,255,255,0.18);}
+.viewer-rot{display:none;grid-template-columns:repeat(3,auto);gap:2px;justify-content:center;margin-bottom:5px;}
+.viewer-rot.show{display:grid;}
+.vr-net{grid-column:1/-1;height:7px;margin-bottom:1px;border-top:2px solid rgba(255,255,255,0.85);background:repeating-linear-gradient(90deg,rgba(255,255,255,0.4) 0 1px,transparent 1px 4px);}
+.vr-cell{width:clamp(17px,4.6vw,24px);height:clamp(17px,4.6vw,24px);border-radius:4px;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.65);font-size:clamp(9px,2.3vw,12px);font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Roboto',sans-serif;}
+.vr-cell.server{background:#fff;color:#111;box-shadow:0 0 8px rgba(255,255,255,0.7);}
+@media (orientation:landscape){.vr-cell{width:clamp(15px,4.2vh,20px);height:clamp(15px,4.2vh,20px);font-size:clamp(8px,2.4vh,11px);}.viewer-rot{margin-bottom:3px;}}
 .viewer-serve-dot{position:absolute;top:clamp(8px,1.5vh,14px);right:clamp(8px,2vw,14px);width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.5);display:none;}
 .viewer-serve-dot.active{display:block;background:#fff;box-shadow:0 0 8px rgba(255,255,255,0.8);}
 .viewer-set-tracker{display:flex;justify-content:center;gap:6px;padding:clamp(4px,0.8vh,8px);background:rgba(8,8,16,0.7);border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0;flex-wrap:wrap;}
@@ -686,6 +693,9 @@ body.light .hdr-title{color:#444;}
   .viewer-set-tracker .vset-pill{width:clamp(80px,8vh,110px)!important;height:clamp(64px,8vh,92px)!important;font-size:clamp(12px,1.6vh,16px)!important;border-radius:14px!important;}
   .viewer-set-tracker .vset-pill span:last-child{font-size:clamp(18px,2.8vh,30px)!important;}
   .viewer-footer{font-size:12px;padding:8px 16px;}
+  .viewer-rot{gap:4px;margin-bottom:10px;}
+  .vr-net{height:10px;}
+  .vr-cell{width:clamp(34px,5vh,56px);height:clamp(34px,5vh,56px);font-size:clamp(16px,2.6vh,28px);border-radius:8px;}
 }
 /* Ensure viewer fits within browser chrome using safe areas */
 #viewer-overlay{
@@ -854,6 +864,7 @@ body.light .hdr-title{color:#444;}
       </div>
       <div class="viewer-score" id="v-score-0">00</div>
       <div class="viewer-bottom">
+        <div class="viewer-rot" id="v-rot-0"></div>
         <div class="viewer-sets" id="v-sets-0">SETS: 0</div>
         <div class="viewer-to-row" id="v-to-count-0">T/O: 2 left</div>
         <div class="viewer-to-dots-row" id="v-to-dots-0"></div>
@@ -868,6 +879,7 @@ body.light .hdr-title{color:#444;}
       </div>
       <div class="viewer-score" id="v-score-1">00</div>
       <div class="viewer-bottom">
+        <div class="viewer-rot" id="v-rot-1"></div>
         <div class="viewer-sets" id="v-sets-1">SETS: 0</div>
         <div class="viewer-to-row" id="v-to-count-1">T/O: 2 left</div>
         <div class="viewer-to-dots-row" id="v-to-dots-1"></div>
@@ -1485,7 +1497,7 @@ body.light .hdr-title{color:#444;}
     <div style="font-size:10px;color:#555;margin-top:6px;line-height:1.5;">Backs up teams, favorites, logos, rules, defaults and match history automatically. Use the same code on another phone/iPad to share them.</div>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.6 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.8 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -2648,18 +2660,30 @@ function rotateTeam(teamIdx){
   rotations[teamIdx]=(rotations[teamIdx]+1)%6;
   render();
   haptic('light');
+  if(typeof liveBinId!=='undefined'&&liveBinId&&typeof pushLiveScore==='function')pushLiveScore();
 }
 // Position layout for a 6-player rotation [back-right, back-mid, back-left, front-left, front-mid, front-right]
 // Displayed as 2-row grid: front row (4,5,6 -> positions 3,4,5) top, back row (1,2,3 -> 0,1,2) bottom
+function setFirstServe(t){
+  if(scores[0]+scores[1]!==0){showToast('First serve can only be changed at 0–0');return;}
+  servingTeam=t;curFirstServe=t;
+  render();haptic('light');
+  showToast(teams[t].name+' serves first');
+  if(typeof liveBinId!=='undefined'&&liveBinId&&typeof pushLiveScore==='function')pushLiveScore();
+}
 function renderRotation(){
   var show=showRotation&&mode==='indoor'&&!gameOver;
   document.getElementById('rotation-bar').style.display=show?'block':'none';
   if(!show)return;
+  var rl=document.querySelector('#rotation-bar .rot-label');
+  if(rl)rl.textContent=(scores[0]+scores[1]===0)?'TAP A TEAM NAME TO PICK WHO SERVES FIRST':'SERVE ROTATION · SERVER = BOTTOM-RIGHT';
   for(var t=0;t<2;t++){
     var grid=document.getElementById('rot-grid-'+t);
     var nameEl=document.getElementById('rot-name-'+t);
     nameEl.textContent=teams[t].name.toUpperCase().substring(0,12);
     nameEl.style.color=teams[t].color;
+    nameEl.style.cursor='pointer';
+    nameEl.onclick=(function(ti){return function(){setFirstServe(ti);};})(t);
     grid.innerHTML='';
     // Front row positions (indices 3,4,5 in rotation array), then back row (0,1,2)
     var rot=rotations[t];
@@ -2676,7 +2700,7 @@ function renderRotation(){
       var slot=order[p];
       var player=(slot-rot+6)%6;   // which player (by starting slot) is standing in this slot now
       var cell=document.createElement('div');
-      cell.className='rot-cell'+(slot===0?' server':'');
+      cell.className='rot-cell'+(slot===0&&servingTeam===t?' server':'')+(player===0?' p1':'');
       cell.textContent=stdPos[player];
       grid.appendChild(cell);
     }
@@ -4031,6 +4055,8 @@ function getLivePayload(){
     gameOver: gameOver,
     winner: winner,
     serve: servingTeam,
+    showRotation: !!(showRotation&&mode==='indoor'),
+    rotations: rotations,
     timeouts: timeouts,
     maxTimeouts: maxTimeouts,
     inTimeout: toTimer!==null,
@@ -4291,7 +4317,16 @@ function renderViewerScore(data){
     var color=(t[i]&&t[i].color)||'#1a3a6b';
     var isWinner=data.winner===i;
     var isLoser=data.winner!=null&&data.winner!==i;
-    if(nm) nm.textContent=(t[i]&&t[i].name||'Team '+(i+1)).toUpperCase();
+    if(nm) nm.textContent=(isWinner?'🏆 ':'')+(t[i]&&t[i].name||'Team '+(i+1)).toUpperCase();
+    // Serve rotation (indoor, when the scorekeeper has it turned on)
+    var vr=document.getElementById('v-rot-'+i);
+    if(vr){
+      if(data.showRotation&&data.mode==='indoor'&&!data.gameOver&&data.rotations){
+        var rot=data.rotations[i]||0,ord=[3,4,5,2,1,0],std=[1,6,5,4,3,2],h='<div class="vr-net"></div>';
+        for(var rp=0;rp<6;rp++){var slot=ord[rp],pl=(slot-rot+6)%6;h+='<div class="vr-cell'+(slot===0&&data.serve===i?' server':'')+'">'+std[pl]+'</div>';}
+        vr.innerHTML=h;vr.classList.add('show');
+      } else {vr.classList.remove('show');vr.innerHTML='';}
+    }
     if(sc){sc.textContent=pad(data.scores[i]||0);sc.style.color='#fff';}
     if(st) st.textContent='SETS: '+(data.sets&&data.sets[i]||0);
     if(ini){ini.textContent=(t[i]&&t[i].name||'T').charAt(0).toUpperCase();ini.style.background='rgba(255,255,255,0.15)';ini.style.color='#fff';}
