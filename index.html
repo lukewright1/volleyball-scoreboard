@@ -665,6 +665,27 @@ body.light .hdr-title{color:#444;}
   .viewer-team-identity{padding-top:clamp(6px,1.5vh,12px);gap:clamp(2px,0.5vh,5px);}
   #viewer-overlay .viewer-header{padding:4px 12px;}
 }
+/* Viewer on desktop / big screens only (phones are untouched: needs 1000px+ wide AND 600px+ tall) */
+@media (min-width:1000px) and (min-height:600px){
+  #viewer-overlay .viewer-header{padding:12px 28px;}
+  #viewer-overlay .viewer-live-badge{font-size:clamp(14px,2vh,20px);}
+  #viewer-code-label{font-size:clamp(12px,1.8vh,16px)!important;}
+  .viewer-team-identity{padding-top:clamp(18px,4vh,48px);gap:clamp(6px,1.4vh,16px);}
+  .viewer-team-logo,.viewer-team-initial{width:clamp(72px,11vh,130px);height:clamp(72px,11vh,130px);border-radius:16px;padding:6px;}
+  .viewer-team-initial{font-size:clamp(36px,6vh,64px);}
+  .viewer-team-name{font-size:clamp(22px,4vh,48px);letter-spacing:4px;}
+  .viewer-score{font-size:clamp(200px,min(40vh,18vw),460px);letter-spacing:-4px;}
+  .viewer-sets{font-size:clamp(16px,2.6vh,28px);letter-spacing:4px;}
+  .viewer-to-row{font-size:clamp(14px,2.1vh,22px);}
+  .viewer-to-dots-row{gap:8px;margin-top:4px;}
+  .viewer-to-dot{width:clamp(11px,1.6vh,18px);height:clamp(11px,1.6vh,18px);}
+  .viewer-bottom{gap:clamp(4px,0.8vh,10px);}
+  .viewer-serve-dot{width:clamp(14px,2vh,24px);height:clamp(14px,2vh,24px);top:clamp(14px,2.5vh,28px);right:clamp(14px,2.5vw,32px);}
+  .viewer-set-tracker{gap:12px;padding:clamp(8px,1.4vh,16px);}
+  .viewer-set-tracker .vset-pill{width:clamp(80px,8vh,110px)!important;height:clamp(64px,8vh,92px)!important;font-size:clamp(12px,1.6vh,16px)!important;border-radius:14px!important;}
+  .viewer-set-tracker .vset-pill span:last-child{font-size:clamp(18px,2.8vh,30px)!important;}
+  .viewer-footer{font-size:12px;padding:8px 16px;}
+}
 /* Ensure viewer fits within browser chrome using safe areas */
 #viewer-overlay{
   padding-top:env(safe-area-inset-top,0px);
@@ -1451,7 +1472,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.0 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.1 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -4286,6 +4307,7 @@ function renderViewerScore(data){
       var h=data.setHistory[i];
       var isCur=i===data.setHistory.length&&!data.gameOver;
       var d2=document.createElement('div');
+      d2.className='vset-pill';
       d2.style.cssText='width:clamp(40px,9vw,54px);height:clamp(44px,9vw,54px);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:clamp(9px,2vw,11px);border:2px solid transparent;gap:1px;';
       if(isCur){d2.style.background='#1a4a8b';d2.style.borderColor='#4a8adb';d2.style.color='#fff';d2.innerHTML='<span>SET</span><span style="font-size:clamp(13px,3vw,18px);">'+(i+1)+'</span>';}
       else if(h){var wc=h.scores[0]>h.scores[1]?(t[0].color||'#aaa'):(t[1].color||'#aaa');d2.style.background=wc;d2.style.color='#fff';d2.innerHTML='<span>SET '+(i+1)+'</span><span style="font-size:clamp(10px,2.5vw,13px);">'+h.scores[0]+'-'+h.scores[1]+'</span>';}
