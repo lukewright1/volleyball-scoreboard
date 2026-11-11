@@ -1472,7 +1472,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.1 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.2 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -4168,6 +4168,24 @@ function copyLiveLink(){
   document.getElementById('live-modal').classList.remove('show');
 }
 
+// Viewer timeout banner: counts down locally every second between pushes
+function paintToBanner(){
+  var b=document.getElementById('viewer-timeout-banner');
+  if(!b||!window._toBase||!window._toBase.ts) return;
+  var rem=window._toBase.rem-Math.floor((Date.now()-window._toBase.at)/1000);
+  if(window._toBase.rem>0 && rem<=0){b.style.display='none';return;}
+  b.textContent='⏱ TIME OUT — '+(window._toName||'')+(window._toBase.rem>0?' · '+rem+'s':'');
+}
+setInterval(paintToBanner,500);
+
+// Push immediately when a timeout starts / ends so viewers see it right away
+var _origUseTimeout=useTimeout;
+useTimeout=function(i){_origUseTimeout(i);if(liveBinId) pushLiveScore();};
+var _origStopTimeout=stopTimeout;
+stopTimeout=function(){_origStopTimeout();if(liveBinId) pushLiveScore();};
+var _origUndoTimeout=undoTimeout;
+undoTimeout=function(i){_origUndoTimeout(i);if(liveBinId) pushLiveScore();};
+
 // Push score whenever a point is scored
 var _origAddPoint=addPoint;
 addPoint=function(i){
@@ -4275,10 +4293,13 @@ function renderViewerScore(data){
   }
   if(data.inTimeout && data.timeoutTeam>=0 && data.teams && data.teams[data.timeoutTeam]){
     var toTeamName=data.teams[data.timeoutTeam].name.toUpperCase();
-    var toSecs=data.timeoutRemaining>0?' · '+data.timeoutRemaining+'s':'';
-    toBanner.textContent='⏱ TIME OUT — '+toTeamName+toSecs;
+    window._toBase=window._toBase||{ts:0,rem:0,at:0};
+    if(window._toBase.ts!==data.ts){window._toBase={ts:data.ts,rem:data.timeoutRemaining||0,at:Date.now()};}
+    window._toName=toTeamName;
     toBanner.style.display='block';
+    paintToBanner();
   } else {
+    window._toBase={ts:0,rem:0,at:0};
     toBanner.style.display='none';
   }
 

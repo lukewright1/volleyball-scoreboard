@@ -381,6 +381,15 @@
 </div>
 
 <script>
+function paintToBanner(){
+  var b=document.getElementById('timeout-banner');
+  if(!b||!window._toBase||!window._toBase.ts) return;
+  var rem=window._toBase.rem-Math.floor((Date.now()-window._toBase.at)/1000);
+  if(window._toBase.rem>0 && rem<=0){b.classList.remove('show');return;}
+  b.textContent='⏱ TIME OUT — '+(window._toName||'')+(window._toBase.rem>0?' · '+rem+'s':'');
+}
+setInterval(paintToBanner,500);
+
 // Reads live score from Firebase Realtime Database (no keys in this file).
 // Streams changes over SSE; falls back to polling if the stream fails.
 var FB_DB='https://volleyball-scoreboard-e2b8c-default-rtdb.firebaseio.com';
@@ -445,10 +454,13 @@ function update(data){
   if(tob){
     if(data.inTimeout && data.timeoutTeam>=0 && data.teams && data.teams[data.timeoutTeam]){
       var toName=data.teams[data.timeoutTeam].name.toUpperCase();
-      var toSecs=data.timeoutRemaining>0?' · '+data.timeoutRemaining+'s':'';
-      tob.textContent='⏱ TIME OUT — '+toName+toSecs;
+      window._toBase=window._toBase||{ts:0,rem:0,at:0};
+      if(window._toBase.ts!==data.ts){window._toBase={ts:data.ts,rem:data.timeoutRemaining||0,at:Date.now()};}
+      window._toName=toName;
       tob.classList.add('show');
+      paintToBanner();
     } else {
+      window._toBase={ts:0,rem:0,at:0};
       tob.classList.remove('show');
     }
   }
