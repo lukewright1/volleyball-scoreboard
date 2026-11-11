@@ -1472,7 +1472,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.3 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.4 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -1631,7 +1631,7 @@ var tbEnabled=true,swSet=true,swTB=true,tbSwScore=8,swAutoScore=false;
 var beachSW=false,beachEvery=7,showSW=false,showServe=true;
 var hs4Man=false,hs4ManSwitchDone=false;
 var scores=[0,0],sets=[0,0],setHistory=[],gameOver=false,winner=null;
-var timeouts=[0,0],maxTimeouts=2,servingTeam=0;
+var timeouts=[0,0],maxTimeouts=2,servingTeam=0,curFirstServe=0; // curFirstServe = who served first this set
 var scoreHistory=[];
 var timeoutDuration=60; // seconds, adjustable
 var toTimer=null,toRemaining=0,currentToTeam=-1;
@@ -1676,9 +1676,10 @@ function winCheck(a,b){
 
 function addPoint(i){
   if(gameOver)return;
-  scoreHistory.push({scores:[...scores],sets:[...sets],setHistory:setHistory.map(function(h){return{scores:[...h.scores]};}),gameOver:gameOver,winner:winner,timeouts:[...timeouts],servingTeam:servingTeam,rotations:[...rotations]});
+  scoreHistory.push({scores:[...scores],sets:[...sets],setHistory:setHistory.map(function(h){return{scores:[...h.scores]};}),gameOver:gameOver,winner:winner,timeouts:[...timeouts],servingTeam:servingTeam,rotations:[...rotations],curFirstServe:curFirstServe});
   haptic('light');
   var prevServing=servingTeam;
+  if(scores[0]+scores[1]===0) curFirstServe=prevServing; // first point of a set: remember who served first
   servingTeam=i; // scorer serves next (rally scoring)
   // Auto-rotate the scoring team if they just won the serve back (sideout)
   if(showRotation&&mode==='indoor'&&i!==prevServing){
@@ -1707,7 +1708,10 @@ function endSet(fs,wi){
     }
   } else {
     // ── SET OVER ──
-    scores=[0,0];timeouts=[0,0];render();
+    scores=[0,0];timeouts=[0,0];
+    // New set: the team that did NOT serve first last set serves first, and rotations restart at the starting lineup
+    servingTeam=curFirstServe===0?1:0;curFirstServe=servingTeam;rotations=[0,0];
+    render();
     // Always show set summary popup (replaces the old banner)
     showSetSummary(setHistory.length, fs, wi);
   }
@@ -1719,6 +1723,7 @@ function undoPoint(){
   scores=prev.scores;sets=prev.sets;setHistory=prev.setHistory;
   gameOver=prev.gameOver;winner=prev.winner;timeouts=prev.timeouts;servingTeam=prev.servingTeam;
   if(prev.rotations)rotations=prev.rotations;
+  if(typeof prev.curFirstServe==='number')curFirstServe=prev.curFirstServe;
   render();
 }
 function switchSides(){
@@ -1736,6 +1741,8 @@ function switchSides(){
   else if(winner===1) winner=0;
   // Flip serving team
   servingTeam=servingTeam===0?1:0;
+  curFirstServe=curFirstServe===0?1:0;
+  rotations=[rotations[1],rotations[0]];
   // Update pending settings teams to match
   pt=[Object.assign({},teams[0]),Object.assign({},teams[1])];
   render();
@@ -1761,7 +1768,7 @@ function resetGame(){
   if(!gameOver&&(scores[0]>0||scores[1]>0||sets[0]>0||sets[1]>0)){
     if(!confirm('Reset game? This will clear the current score.'))return;
   }
-  clearGameState();scores=[0,0];sets=[0,0];setHistory=[];gameOver=false;winner=null;timeouts=[0,0];servingTeam=0;scoreHistory=[];rotations=[0,0];hs4ManSwitchDone=false;render();var ew=document.getElementById('switch-warn');if(ew)ew.style.display='none';}
+  clearGameState();scores=[0,0];sets=[0,0];setHistory=[];gameOver=false;winner=null;timeouts=[0,0];servingTeam=0;curFirstServe=0;scoreHistory=[];rotations=[0,0];hs4ManSwitchDone=false;render();var ew=document.getElementById('switch-warn');if(ew)ew.style.display='none';}
 
 function triggerSwitch(old,ns,ended){
   if(gameOver)return;
