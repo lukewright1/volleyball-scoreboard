@@ -381,9 +381,11 @@
 </div>
 
 <script>
-var KEY='$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
-var BASE='https://api.jsonbin.io/v3';
-var PERMANENT_BIN='69cfdf33856a682189f81357';
+// Reads live score from Firebase Realtime Database (no keys in this file).
+// Streams changes over SSE; falls back to polling if the stream fails.
+var FB_DB='https://volleyball-scoreboard-e2b8c-default-rtdb.firebaseio.com';
+var CHANNEL=(new URLSearchParams(window.location.search).get('ch')||'live').replace(/[^A-Za-z0-9_-]/g,'')||'live';
+var FB_URL=FB_DB+'/vb/'+CHANNEL+'.json';
 var prevScores=[-1,-1];
 
 function pad(n){return n<10?'0'+n:''+n;}
@@ -488,17 +490,44 @@ function update(data){
   }
 }
 
-function fetch_score(){
-  var p=new URLSearchParams(window.location.search);
-  var bin=p.get('bin')||PERMANENT_BIN;
-  fetch(BASE+'/b/'+bin+'/latest',{headers:{'X-Master-Key':KEY}})
-    .then(function(r){return r.json();})
-    .then(function(d){update(d.record);})
-    .catch(function(){});
+var pollTimer=null;
+function pollOnce(){
+  fetch(FB_URL+'?t='+Date.now()).then(function(r){return r.json();})
+    .then(function(d){if(d)update(d);}).catch(function(){});
 }
-
-fetch_score();
-setInterval(fetch_score,5000);
+function startPolling(){
+  if(pollTimer)return;
+  pollOnce();
+  pollTimer=setInterval(pollOnce,5000);
+}
+function startStream(){
+  if(!window.EventSource){startPolling();return;}
+  var es=new EventSource(FB_URL);
+  var current=null;
+  function handle(e){
+    try{
+      var m=JSON.parse(e.data);
+      if(!m)return;
+      if(m.path==='/'){current=m.data;}
+      else if(current&&typeof current==='object'){
+        var parts=m.path.split('/').filter(Boolean),ref=current;
+        for(var i=0;i<parts.length-1;i++){ref=ref[parts[i]]=ref[parts[i]]||{};}
+        ref[parts[parts.length-1]]=m.data;
+      }
+      if(current)update(current);
+    }catch(err){}
+  }
+  es.addEventListener('put',handle);
+  es.addEventListener('patch',handle);
+  es.onerror=function(){
+    // EventSource reconnects on its own; poll as a safety net meanwhile
+    startPolling();
+  };
+  es.onopen=function(){
+    if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+  };
+}
+startStream();
 </script>
 </body>
 </html>

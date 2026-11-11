@@ -1426,7 +1426,7 @@ body.light .hdr-title{color:#444;}
       <!-- Overlay URL for Streamlabs -->
       <div style="background:#0a0a1e;border:1px solid #2a2a4e;border-radius:10px;padding:10px 12px;">
         <div style="font-size:10px;letter-spacing:2px;color:#22dd66;margin-bottom:6px;">📺 STREAMLABS OVERLAY URL</div>
-        <div id="overlay-url-display" style="font-size:10px;color:#4a8adb;word-break:break-all;font-family:'Roboto Mono',monospace;line-height:1.6;margin-bottom:8px;min-height:32px;" data-url="https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357">https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357</div>
+        <div id="overlay-url-display" style="font-size:10px;color:#4a8adb;word-break:break-all;font-family:'Roboto Mono',monospace;line-height:1.6;margin-bottom:8px;min-height:32px;" data-url="https://lukewright1.github.io/volleyball-scoreboard/overlay.html">https://lukewright1.github.io/volleyball-scoreboard/overlay.html</div>
         <button onclick="copyOverlayUrl()" style="width:100%;background:#1a4a8b;border-radius:8px;color:#fff;font-size:13px;font-weight:700;padding:10px;">📋 Copy Overlay URL for Streamlabs</button>
       </div>
     </div>
@@ -1451,7 +1451,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.5.0 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.0 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -3896,27 +3896,8 @@ function pushFinalStateToViewers(){
 
 function reconnectToLive(){
   var code = (document.getElementById('reconnect-code-input').value||'').trim().toUpperCase();
-  if(code.length < 4){showToast('Enter a 4-character code');return;}
-
-  // Search JSONBin for a bin named vb-live-CODE
-  showToast('Searching for session...');
-  fetch(JSONBIN_BASE+'/b/search?q=vb-live-'+code, {
-    headers:{'X-Master-Key': JSONBIN_KEY}
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    // Try direct lookup via stored bin list
-    if(!data||!data.result||data.result.length===0){
-      // Fall back: prompt for full bin ID
-      showReconnectManual(code);
-      return;
-    }
-    var bin = data.result[0];
-    doReconnect(bin.id, code);
-  })
-  .catch(function(){
-    showReconnectManual(code);
-  });
+  // One permanent channel now — reconnecting just resumes pushing to it
+  doReconnect(PERMANENT_BIN_ID, code||'LIVE');
 }
 
 function showReconnectManual(code){
@@ -3968,10 +3949,11 @@ function checkForLiveRestore(){
   }catch(e){}
 }
 
-// LIVE SCORE SHARING via JSONBin.io
+// LIVE SCORE SHARING via Firebase Realtime Database
+// No secret in this file — access is controlled by the database rules.
 // ══════════════════════════════════════════════════
-var JSONBIN_KEY = '$2a$10$O52Epek2K9iUlRf/e9HfauY.iD95khjnndKDx6nqltdVZeOgVqUP6';
-var JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+var FB_DB = 'https://volleyball-scoreboard-e2b8c-default-rtdb.firebaseio.com';
+function fbUrl(key){return FB_DB+'/vb/'+String(key||'live').replace(/[^A-Za-z0-9_-]/g,'')+'.json';}
 var liveBinId = null;
 var liveCode = null;
 var liveInterval = null;
@@ -4016,60 +3998,21 @@ function handleLiveBtn(){
   }
 }
 // Permanent bin ID — hardcoded, never changes
-var PERMANENT_BIN_ID = '69cfdf33856a682189f81357';
+var PERMANENT_BIN_ID = 'live'; // channel name under /vb/ — never changes
 
 function goLive(){
   if(liveBinId){
     showLiveModal();
     return;
   }
-  // Always use the hardcoded permanent bin — no more new bins
   liveBinId = PERMANENT_BIN_ID;
   liveCode = 'LIVE';
-  // Save to localStorage too for recovery
   try{localStorage.setItem('vb_fixed_bin',JSON.stringify({binId:liveBinId,code:'LIVE'}));}catch(e){}
   try{localStorage.setItem('vb_live_bin',JSON.stringify({binId:liveBinId,code:'LIVE',ts:Date.now()}));}catch(e){}
   startLivePush();
   updateLiveBar();
-  // Show overlay URL
-  setTimeout(function(){
-    var overlayEl=document.getElementById('overlay-url-display');
-    if(overlayEl){
-      overlayEl.textContent='https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357';
-      overlayEl.dataset.url='https://lukewright1.github.io/volleyball-scoreboard/overlay.html?bin=69cfdf33856a682189f81357';
-    }
-  },200);
   showLiveModal();
   showToast('📡 Live! Overlay link is permanent.');
-  return;
-  // Dead code below kept for reference only
-  liveCode='LIVE';
-  var payload=getLivePayload();
-  fetch(JSONBIN_BASE+'/b',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'X-Master-Key':JSONBIN_KEY,
-      'X-Bin-Name':'vb-scoreboard-'+Date.now(),
-      'X-Bin-Private':'false'
-    },
-    body:JSON.stringify(payload)
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    liveBinId=d.metadata.id;
-    // Save as permanent fixed bin — reused every game forever
-    try{localStorage.setItem('vb_fixed_bin',JSON.stringify({binId:liveBinId,code:'LIVE'}));}catch(e){}
-    try{localStorage.setItem('vb_live_bin',JSON.stringify({binId:liveBinId,code:'LIVE',ts:Date.now()}));}catch(e){}
-    startLivePush();
-    updateLiveBar();
-    showLiveModal();
-    showToast('📡 Live! Overlay link is permanent.');
-  })
-  .catch(function(e){
-    showToast('Could not go live — check connection');
-    console.error(e);
-  });
 }
 
 // Reset fixed bin (use if you want a fresh link)
@@ -4103,12 +4046,9 @@ function pushLiveScore(){
   var payload = getLivePayload();
   // Keep live bin reference fresh in localStorage
   try{localStorage.setItem('vb_live_bin',JSON.stringify({binId:liveBinId,code:liveCode,ts:Date.now()}));}catch(e){}
-  fetch(JSONBIN_BASE+'/b/'+liveBinId, {
+  fetch(fbUrl(liveBinId), {
     method:'PUT',
-    headers:{
-      'Content-Type':'application/json',
-      'X-Master-Key': JSONBIN_KEY
-    },
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify(payload)
   }).catch(function(){});
 }
@@ -4165,7 +4105,7 @@ function updateLiveBar(){
   var overlayEl=document.getElementById('overlay-url-display');
   if(overlayEl&&liveBinId){
     var base='https://lukewright1.github.io/volleyball-scoreboard/';
-    var overlayUrl=base+'overlay.html?bin='+liveBinId;
+    var overlayUrl=base+'overlay.html';
     overlayEl.textContent=overlayUrl;
     overlayEl.dataset.url=overlayUrl;
   } else if(overlayEl){
@@ -4221,19 +4161,42 @@ removePoint=function(i){
 };
 
 // ── VIEWER MODE ──
+var viewerStream=null, viewerData=null;
 function startViewer(binId, code){
   isViewer=true;
   viewerBinId=binId;
   document.getElementById('viewer-code-label').textContent='CODE: '+code;
   document.getElementById('viewer-overlay').classList.add('show');
   fetchViewerScore();
+  if(window.EventSource){
+    try{
+      viewerStream=new EventSource(fbUrl(viewerBinId));
+      var onMsg=function(e){
+        try{
+          var m=JSON.parse(e.data);
+          if(!m)return;
+          if(m.path==='/'){viewerData=m.data;}
+          else if(viewerData&&typeof viewerData==='object'){
+            var parts=m.path.split('/').filter(Boolean),ref=viewerData;
+            for(var k=0;k<parts.length-1;k++){ref=ref[parts[k]]=ref[parts[k]]||{};}
+            ref[parts[parts.length-1]]=m.data;
+          }
+          if(viewerData)renderViewerScore(viewerData);
+        }catch(err){}
+      };
+      viewerStream.addEventListener('put',onMsg);
+      viewerStream.addEventListener('patch',onMsg);
+    }catch(err){viewerStream=null;}
+  }
+  // Slow safety poll (stream does the real work)
   if(viewerInterval) clearInterval(viewerInterval);
-  viewerInterval=setInterval(fetchViewerScore, 10000);
+  viewerInterval=setInterval(fetchViewerScore, viewerStream?30000:10000);
 }
 
 function exitViewer(){
   isViewer=false;
   if(viewerInterval){clearInterval(viewerInterval);viewerInterval=null;}
+  if(viewerStream){viewerStream.close();viewerStream=null;}
   document.getElementById('viewer-overlay').classList.remove('show');
   // Clear URL params without reload
   window.history.replaceState({},'',window.location.pathname);
@@ -4241,11 +4204,9 @@ function exitViewer(){
 
 function fetchViewerScore(){
   if(!viewerBinId) return;
-  fetch(JSONBIN_BASE+'/b/'+viewerBinId+'/latest', {
-    headers:{'X-Master-Key': JSONBIN_KEY}
-  })
+  fetch(fbUrl(viewerBinId)+'?t='+Date.now())
   .then(function(r){return r.json();})
-  .then(function(d){renderViewerScore(d.record);})
+  .then(function(d){if(d)renderViewerScore(d);})
   .catch(function(){});
 }
 
