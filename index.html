@@ -1472,7 +1472,7 @@ body.light .hdr-title{color:#444;}
     <button onclick="saveSettings()" style="flex:1;background:#1a6b2e;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:15px;border:none;">↺ New Game</button>
   </div>
   <div style="text-align:center;margin-top:14px;padding-bottom:4px;">
-    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.2 · Volleyball Scoreboard</span>
+    <span style="font-size:10px;color:#2a2a3e;letter-spacing:2px;font-family:'Roboto',sans-serif;user-select:none;">v2.6.3 · Volleyball Scoreboard</span>
   </div>
 </div>
 
@@ -4288,7 +4288,7 @@ function renderViewerScore(data){
   if(!toBanner){
     toBanner=document.createElement('div');
     toBanner.id='viewer-timeout-banner';
-    toBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(230,160,0,0.95);color:#000;text-align:center;font-family:Oswald,sans-serif;font-size:clamp(18px,4vw,28px);font-weight:700;letter-spacing:3px;padding:clamp(10px,2vh,18px);display:none;';
+    toBanner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:900;background:rgba(230,160,0,0.95);color:#000;text-align:center;font-family:Oswald,sans-serif;font-size:clamp(18px,4vw,28px);font-weight:700;letter-spacing:3px;padding:clamp(10px,2vh,18px);display:none;';
     document.body.appendChild(toBanner);
   }
   if(data.inTimeout && data.timeoutTeam>=0 && data.teams && data.teams[data.timeoutTeam]){
